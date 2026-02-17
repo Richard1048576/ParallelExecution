@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO: Tighter cache control.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+            ./target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: bnjbvr/cargo-machete@main
+
+      - name: Lint
+        run: cargo clippy --workspace --all-targets
+
+      - name: Test
+        env:
+          ETHEREUM_RPC_URL: ${{ secrets.ETHEREUM_RPC_URL }}
+          OPTIMISM_RPC_URL: ${{ secrets.OPTIMISM_RPC_URL }}
+        # Running our heavy tests in parallel would congest resources.
+        # Each test still executes parallelly anyway.
+        run: |
+          git submodule update --init
+          cargo test --release --workspace -- --test-threads=1

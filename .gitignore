@@ -1,0 +1,7 @@
+.vscode
+.idea
+/target
+perf.*
+Claude.md
+PERPDEX.md
+ParallelExecution
